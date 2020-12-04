@@ -177,6 +177,10 @@ export class HttpService
   }
 
   private async runNotReadyServer(config: HttpConfig) {
+    if (!!process.env.isDevCliChild) {
+      return;
+    }
+
     this.log.debug('starting NotReady server');
     const httpServer = new HttpServer(this.logger, 'NotReady');
     const { server } = await httpServer.setup(config);

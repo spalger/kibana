@@ -24,6 +24,7 @@ import { ValidationError } from 'joi';
 import uuid from 'uuid';
 import { HttpConfig } from './http_config';
 import { validateObject } from './prototype_pollution';
+import { DevCliChildServer } from './dev_cli_child_server';
 
 /**
  * Converts Kibana `HttpConfig` into `ServerOptions` that are accepted by the Hapi server.
@@ -63,6 +64,10 @@ export function getServerOptions(config: HttpConfig, { configureTLS = true } = {
       isSameSite: false, // necessary to allow using Kibana inside an iframe
     },
   };
+
+  if (process.env.isDevCliChild) {
+    options.listener = new DevCliChildServer();
+  }
 
   if (configureTLS && config.ssl.enabled) {
     const ssl = config.ssl;

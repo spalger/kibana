@@ -2731,6 +2731,10 @@
   version "0.0.0"
   uid ""
 
+"@kbn/dev-cli@link:packages/kbn-dev-cli":
+  version "0.0.0"
+  uid ""
+
 "@kbn/dev-utils@link:packages/kbn-dev-utils":
   version "0.0.0"
   uid ""

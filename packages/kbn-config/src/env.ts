@@ -106,6 +106,12 @@ export class Env {
   public readonly isDevCliParent: boolean;
 
   /**
+   * Indicates that this Kibana instance is running in the child process of the dev cli.
+   * @internal
+   */
+  public readonly isDevCliChild: boolean;
+
+  /**
    * @internal
    */
   constructor(public readonly homeDir: string, pkg: RawPackageInfo, options: EnvOptions) {
@@ -122,6 +128,7 @@ export class Env {
     this.cliArgs = Object.freeze(options.cliArgs);
     this.configs = Object.freeze(options.configs);
     this.isDevCliParent = options.isDevCliParent;
+    this.isDevCliChild = !!process.env.isDevCliChild;
 
     const isDevMode = this.cliArgs.dev || this.cliArgs.envName === 'development';
     this.mode = Object.freeze<EnvironmentMode>({
