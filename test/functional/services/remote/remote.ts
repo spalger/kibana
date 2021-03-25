@@ -13,13 +13,13 @@ import { mergeMap } from 'rxjs/operators';
 
 import { FtrProviderContext } from '../../ftr_provider_context';
 import { initWebDriver, BrowserConfig } from './webdriver';
-import { Browsers } from './browsers';
+import { isChromeBased, parseBrowserType } from './browser_type';
 
 export async function RemoteProvider({ getService }: FtrProviderContext) {
   const lifecycle = getService('lifecycle');
   const log = getService('log');
   const config = getService('config');
-  const browserType: Browsers = config.get('browser.type');
+  const browserType = parseBrowserType(config.get('browser.type'));
   const collectCoverage: boolean = !!process.env.CODE_COVERAGE;
   const coveragePrefix = 'coveragejson:';
   const coverageDir = resolve(__dirname, '../../../../target/kibana-coverage/functional');
@@ -68,7 +68,7 @@ export async function RemoteProvider({ getService }: FtrProviderContext) {
     )}, collectingCoverage=${collectCoverage}`
   );
 
-  if ([Browsers.Chrome, Browsers.ChromiumEdge].includes(browserType)) {
+  if (isChromeBased(browserType)) {
     log.info(
       `${browserType}driver version: ${caps.get(browserType)[`${browserType}driverVersion`]}`
     );

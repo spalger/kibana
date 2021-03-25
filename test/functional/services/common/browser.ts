@@ -17,7 +17,7 @@ import { modifyUrl } from '@kbn/std';
 import Jimp from 'jimp';
 import { WebElementWrapper } from '../lib/web_element_wrapper';
 import { FtrProviderContext } from '../../ftr_provider_context';
-import { Browsers } from '../remote/browsers';
+import { isChromeBased } from '../remote';
 
 export type Browser = ProvidedType<typeof BrowserProvider>;
 export async function BrowserProvider({ getService }: FtrProviderContext) {
@@ -35,11 +35,8 @@ export async function BrowserProvider({ getService }: FtrProviderContext) {
      */
     public readonly browserType: string = browserType;
 
-    public readonly isChromium: boolean = [Browsers.Chrome, Browsers.ChromiumEdge].includes(
-      browserType
-    );
-
-    public readonly isFirefox: boolean = browserType === Browsers.Firefox;
+    public readonly isChromium = isChromeBased(browserType);
+    public readonly isFirefox = browserType === 'firefox';
 
     /**
      * Returns instance of Actions API based on driver w3c flag

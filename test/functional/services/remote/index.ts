@@ -7,3 +7,4 @@
  */
 
 export { RemoteProvider } from './remote';
+export * from './browser_type';

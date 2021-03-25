@@ -31,7 +31,7 @@ import { pollForLogEntry$ } from './poll_for_log_entry';
 import { createStdoutSocket } from './create_stdout_stream';
 import { preventParallelCalls } from './prevent_parallel_calls';
 
-import { Browsers } from './browsers';
+import { BrowserType } from './browser_type';
 
 const throttleOption: string = process.env.TEST_THROTTLE_NETWORK as string;
 const headlessBrowser: string = process.env.TEST_BROWSER_HEADLESS as string;
@@ -75,7 +75,7 @@ let attemptCounter = 0;
 let edgePaths: { driverPath: string | undefined; browserPath: string | undefined };
 async function attemptToCreateCommand(
   log: ToolingLog,
-  browserType: Browsers,
+  browserType: BrowserType,
   lifecycle: Lifecycle,
   config: BrowserConfig
 ) {
@@ -308,7 +308,7 @@ async function attemptToCreateCommand(
 
 export async function initWebDriver(
   log: ToolingLog,
-  browserType: Browsers,
+  browserType: BrowserType,
   lifecycle: Lifecycle,
   config: BrowserConfig
 ) {
@@ -327,7 +327,7 @@ export async function initWebDriver(
   Fs.mkdirSync(downloadDir, { recursive: true });
 
   // download Edge driver only in case of usage
-  if (browserType === Browsers.ChromiumEdge) {
+  if (browserType === 'msedge') {
     edgePaths = await installDriver();
   }
 

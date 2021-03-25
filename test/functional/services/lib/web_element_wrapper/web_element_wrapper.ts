@@ -16,7 +16,7 @@ import { ToolingLog } from '@kbn/dev-utils';
 import { CustomCheerio, CustomCheerioStatic } from './custom_cheerio_api';
 // @ts-ignore not supported yet
 import { scrollIntoViewIfNecessary } from './scroll_into_view_if_necessary';
-import { Browsers } from '../../remote/browsers';
+import { BrowserType, isChromeBased } from '../../remote';
 
 interface TypeOptions {
   charByChar: boolean;
@@ -36,7 +36,7 @@ const RETRY_CLICK_RETRY_ON_ERRORS = [
 export class WebElementWrapper {
   private By = By;
   private Keys = Key;
-  public isChromium: boolean = [Browsers.Chrome, Browsers.ChromiumEdge].includes(this.browserType);
+  public isChromium = isChromeBased(this.browserType);
 
   public static create(
     webElement: WebElement | WebElementWrapper,
@@ -45,7 +45,7 @@ export class WebElementWrapper {
     timeout: number,
     fixedHeaderHeight: number,
     logger: ToolingLog,
-    browserType: Browsers
+    browserType: BrowserType
   ): WebElementWrapper {
     if (webElement instanceof WebElementWrapper) {
       return webElement;
@@ -69,7 +69,7 @@ export class WebElementWrapper {
     private timeout: number,
     private fixedHeaderHeight: number,
     private logger: ToolingLog,
-    private browserType: Browsers
+    private browserType: BrowserType
   ) {}
 
   private async _findWithCustomTimeout(
