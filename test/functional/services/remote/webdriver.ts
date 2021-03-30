@@ -122,6 +122,8 @@ async function attemptToCreateCommand(
           // Visit chrome://inspect in chrome to remotely view/debug
           chromeOptions.headless();
           chromeOptions.addArguments('disable-gpu', 'remote-debugging-port=9222');
+        } else {
+          chromeOptions.addArguments('remote-debugging-port=0');
         }
 
         if (browserBinaryPath) {

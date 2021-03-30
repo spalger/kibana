@@ -48,6 +48,7 @@ import { SavedQueryManagementComponentProvider } from './saved_query_management_
 import { KibanaSupertestProvider } from './supertest';
 import { MenuToggleProvider } from './menu_toggle';
 import { MonacoEditorProvider } from './monaco_editor';
+import { BrowserPerformanceProvider } from './browser_performance';
 
 export const services = {
   ...commonServiceProviders,
@@ -86,4 +87,5 @@ export const services = {
   managementMenu: ManagementMenuProvider,
   monacoEditor: MonacoEditorProvider,
   MenuToggle: MenuToggleProvider,
+  browserPerformance: BrowserPerformanceProvider,
 };

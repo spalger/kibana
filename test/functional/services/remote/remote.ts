@@ -121,6 +121,14 @@ export async function RemoteProvider({ getService }: FtrProviderContext) {
   });
 
   lifecycle.cleanup.add(async () => {
+    try {
+      const browserPerformance = getService('browserPerformance');
+      await browserPerformance.waitForNothingInProgress();
+    } catch (error) {
+      log.error('failed to wait for browserPerformance cleanup');
+      log.error(error);
+    }
+
     // Getting the last piece of code coverage before closing browser
     if (collectCoverage) {
       const coverageJson = await driver

@@ -19,6 +19,7 @@ export default function ({ getService, getPageObjects }: FtrProviderContext) {
   const esArchiver = getService('esArchiver');
   const kibanaServer = getService('kibanaServer');
   const dashboardAddPanel = getService('dashboardAddPanel');
+  const browserPerformance = getService('browserPerformance');
 
   describe('create and add embeddables', () => {
     before(async () => {
@@ -32,7 +33,7 @@ export default function ({ getService, getPageObjects }: FtrProviderContext) {
     });
 
     describe('add new visualization link', () => {
-      it('adds new visualization via the top nav link', async () => {
+      it.only('adds new visualization via the top nav link', async () => {
         const originalPanelCount = await PageObjects.dashboard.getPanelCount();
         await PageObjects.dashboard.switchToEditMode();
         await dashboardAddPanel.clickCreateNewLink();
@@ -47,7 +48,20 @@ export default function ({ getService, getPageObjects }: FtrProviderContext) {
           const panelCount = await PageObjects.dashboard.getPanelCount();
           expect(panelCount).to.eql(originalPanelCount + 1);
         });
-        await PageObjects.dashboard.waitForRenderComplete();
+
+        await browserPerformance.recordPerf(
+          'add new visualization via the top nav link',
+          async () => {
+            await browser.refresh();
+            await PageObjects.common.sleep(1000);
+            await retry.try(async () => {
+              const panelCount = await PageObjects.dashboard.getPanelCount();
+              expect(panelCount).to.eql(originalPanelCount + 1);
+            });
+
+            await PageObjects.dashboard.waitForRenderComplete();
+          }
+        );
       });
 
       it('adds a new visualization', async () => {

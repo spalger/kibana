@@ -9,6 +9,7 @@
 import { dirname, resolve } from 'path';
 
 import Joi from 'joi';
+import { REPO_ROOT } from '@kbn/dev-utils';
 
 // valid pattern for ID
 // enforced camel-case identifiers for consistency
@@ -245,6 +246,13 @@ export const schema = Joi.object()
     failureDebugging: Joi.object()
       .keys({
         htmlDirectory: Joi.string().default(defaultRelativeToConfigPath('failure_debug/html')),
+      })
+      .default(),
+
+    // settings for the failureDebugging module
+    browserPerf: Joi.object()
+      .keys({
+        recordingDir: Joi.string().default(resolve(REPO_ROOT, 'target/perf_recordings')),
       })
       .default(),
 
