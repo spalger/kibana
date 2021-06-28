@@ -12,6 +12,8 @@ import { stringifyRequest, getOptions } from 'loader-utils';
 import webpack from 'webpack';
 import PostCss from 'postcss';
 import NodeSass from 'node-sass';
+// @ts-expect-error not intended to be consumed externally
+import cssLoaderUrlPlugin from 'css-loader/dist/plugins/postcss-url-parser';
 
 import { parseThemeTags, ALL_THEMES, ThemeTag, ThemeTags } from '../common';
 // @ts-expect-error required to be JS by other tools consuming it
@@ -25,6 +27,19 @@ interface LoaderOptions {
   themeTags: ThemeTags;
 }
 
+interface ProcessResult {
+  key: string;
+  tag: ThemeTag;
+  css: string;
+  map: string | undefined;
+  imports: unknown[];
+  replacements: unknown[];
+}
+
+interface ResultRef {
+  ref: string;
+}
+
 function parseOptions(ctx: webpack.loader.LoaderContext): LoaderOptions {
   const raw = getOptions(ctx);
 
@@ -35,6 +50,14 @@ function parseOptions(ctx: webpack.loader.LoaderContext): LoaderOptions {
     themeTags: parseThemeTags(raw.themeTags),
   };
 }
+
+// from https://github.com/webpack-contrib/css-loader/blob/master/src/index.js#L91-L96
+const RESOLVE_OPTIONS = {
+  conditionNames: ['asset'],
+  mainFields: ['asset'],
+  mainFiles: [],
+  extensions: [],
+};
 
 const processFile = async ({
   css,
@@ -85,49 +108,74 @@ const processFile = async ({
     }
   }
 
+  const imports: unknown[] = [];
+  const replacements: unknown[] = [];
+  const plugins = [
+    ...postCssConfig.plugins,
+    cssLoaderUrlPlugin({
+      imports,
+      replacements,
+      context: ctx.context,
+      rootContext: ctx.rootContext,
+      // @ts-expect-error exists but untyped https://github.com/webpack/webpack/blob/webpack-4/lib/NormalModule.js#L199-L213
+      resolver: ctx.getResolve(RESOLVE_OPTIONS),
+      urlHandler: (url: string) => stringifyRequest(ctx, url),
+    }),
+  ];
+
   // process the node-sass result with post-css
-  const postCssResult = await PostCss(postCssConfig.plugins).process(
-    nodeSassResult.css.toString(),
-    {
-      map: nodeSassResult.map
-        ? {
-            prev: normalizeNodeSassSourceMap(nodeSassResult.map, ctx.rootContext),
-            inline: false,
-            annotation: false,
-          }
-        : false,
-      from: ctx.resourcePath,
-    }
-  );
+  const postCssResult = await PostCss(plugins).process(nodeSassResult.css.toString(), {
+    map: nodeSassResult.map
+      ? {
+          prev: normalizeNodeSassSourceMap(nodeSassResult.map, ctx.rootContext),
+          inline: false,
+          annotation: false,
+        }
+      : false,
+    from: ctx.resourcePath,
+  });
   ctx.addDependency(Path.normalize(require.resolve('../../postcss.config.js')));
 
+  if (imports.length || replacements.length) {
+    debugger;
+  }
+
   return {
+    imports,
+    replacements,
     css: postCssResult.css,
     map: postCssResult.map ? JSON.stringify(postCssResult.map) : undefined,
   };
 };
 
-const asyncLoader = async (ctx: webpack.loader.LoaderContext, css: string) => {
+const asyncLoader = async (ctx: webpack.loader.LoaderContext, scss: string) => {
   const options = parseOptions(ctx);
 
   // process css into results for each active theme
-  const processResults: Array<{ tag: ThemeTag; css: string; map: string | undefined }> = [];
+  const processResults: ProcessResult[] = [];
+
   await Promise.all(
     ALL_THEMES.map(async (tag) => {
       if (!options.themeTags.includes(tag)) {
         return;
       }
 
-      processResults.push({
-        tag,
-        ...(await processFile({
+      const { map, css, imports, replacements } = await processFile({
+        ctx,
+        options,
+        css: `@import ${stringifyRequest(
           ctx,
-          options,
-          css: `@import ${stringifyRequest(
-            ctx,
-            Path.resolve(options.repoRoot, `src/core/public/core_app/styles/_globals_${tag}.scss`)
-          )};\n${css}`,
-        })),
+          Path.resolve(options.repoRoot, `src/core/public/core_app/styles/_globals_${tag}.scss`)
+        )};\n${scss}`,
+      });
+
+      processResults.push({
+        key: JSON.stringify({ css, imports, replacements }),
+        tag,
+        map,
+        css,
+        imports,
+        replacements,
       });
     })
   );
@@ -137,7 +185,7 @@ const asyncLoader = async (ctx: webpack.loader.LoaderContext, css: string) => {
 
   // iterate the processResults and write them to a map, with css/sourceMap properties or a ref
   // to another theme with the same css/sourceMap
-  const resultMap: Record<string, string | { ref: string }> = {};
+  const resultMap: Record<string, string | ResultRef> = {};
   addResultsToMap: for (const result of processResults) {
     // try to find existing themedVersion with matching css as this result
     for (const [otherTag, otherResult] of Object.entries(resultMap)) {
